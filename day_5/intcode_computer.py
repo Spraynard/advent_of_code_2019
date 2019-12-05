@@ -7,19 +7,19 @@ Intcode program is a list of integers separated by commas.
 99 	- 	Exit. Program is finished and should immediately halt.
 
 1  	-  	Add. adds together numbers read from two positions and stores the result
-      	in a third position. The three integers *immediately after* the opcode tell
-      	you these three positions. The first two indicate the *positions* from which
-      	you should read the input values. The third indicates the *position* at which
-      	the *output* should be stored.
+		in a third position. The three integers *immediately after* the opcode tell
+		you these three positions. The first two indicate the *positions* from which
+		you should read the input values. The third indicates the *position* at which
+		the *output* should be stored.
 
 2  	-  	Multiply. Works like opcode 1, except it multiplies instead of adds.
 
 3  	-  	Input. Takes a single integer as input and saves it to the address given by its only
-      	parameter. The instruction 3,50 would take an input value and store it at
-      	address 50.
+		parameter. The instruction 3,50 would take an input value and store it at
+		address 50.
 
 4  	-  	Output. Outputs the value of its only paramester. The instruction 4,50 would output
-      	the value at address 50.
+		the value at address 50.
 
 5	-	jump-if-true. If the first parameter is *non-zero*, it sets the instruction pointer to the value from the second parameter.
 		otherwise does nothing.
@@ -41,9 +41,9 @@ This is true unless we perform certain instructions, such as that of opcode
 and skip over any automatic pointer increases.
 
 PARAMETER MODES:
-    * 0 - Position Mode. Denotes we interpret a parameter as the position of
-          the value that we want to interpret.
-    * 1 - Immediate Mode. Denotes we want to interpret the parameter as a value
+	* 0 - Position Mode. Denotes we interpret a parameter as the position of
+		  the value that we want to interpret.
+	* 1 - Immediate Mode. Denotes we want to interpret the parameter as a value
 
 Parameter modes are stored in the same value as the instruction's opcode.
 The opcode is the rightmost two digits of the first value in an instruction.
@@ -59,7 +59,7 @@ DE - Two Digit Opcode,          02 == opcode 2
  C - Mode of first parameter,    0 == position mode
  B - Mode of second parameter,   1 == immediate mode
  A - Mode of third parameter,    0 == position mode,
-                                      omitted due to being a leading zero.
+									  omitted due to being a leading zero.
 =================================================================
 
 Intcodes model a computer's memory. Be sure and initialize memory to the program's values when you start.
@@ -70,6 +70,8 @@ Opcodes (like 1, 2, or 99) mark the beginning of an instruction. The values used
 
 The address of the current instruction is called the instruction pointer; it starts at 0. After an instruction finishes, the instruction pointer increases by the number of values in the instruction; until you add more instructions to the computer, this is always 4 (1 opcode + 3 parameters) for the add and multiply instructions. (The halt instruction would increase the instruction pointer by 1, but it halts the program instead.)
 '''
+import traceback
+
 # Constants
 OPCODE_ADDITION=1
 OPCODE_MULTIPLICATION=2
@@ -85,186 +87,304 @@ PARAMETER_MODE_IMMEDIATE=1
 
 
 def assertEquals( target, guess ):
-    '''
-    Assert that the guess equals the value of the target
-    '''
+	'''
+	Assert that the guess equals the value of the target
+	'''
 
-    if not guess == target:
-        print('''
+	if not guess == target:
+		print('''
 Unsuccessful...
 
 Guess: {guess}
 Target: {target}
 '''.format( guess=guess, target=target))
-        return False
-    print("Test is good")
-    return True
+		return False
+	print("Test is good")
+	return True
 
 # Process performed when we evaluate opcode: 1
 def add( value1, value2 ):
-    return value1 + value2
+	return value1 + value2
 
 # Process performed when we evaluate opcode: 2
 def mul( value1, value2):
-    return value1 * value2
+	return value1 * value2
 
 # Process performed when we evaluate opcode: 3
-def get_input( array, value ):
-    '''
-    Obtains user input and puts it in the address
-    denoted by value
-    '''
-    user_input = input("> ")
+def get_input( array, value, test_input=None ):
+	'''
+	Obtains user input and puts it in the address
+	denoted by value
+	'''
+	user_input = input("> ") if test_input is None else str(test_input)
 
-    if 0 <= value < len(array):
-        array[value] = user_input
+	if 0 <= value < len(array):
+		array[value] = user_input
 
-    return True
+	return array
 
 def do_output( array, value):
-    print(">> {value}".format(value=value))
-    return True
+	'''
+	Outputs the given value
+	'''
+	print(">> {value}".format(value=value))
+	return True
+
+def is_true( parameter ):
+	return not parameter == 0
+
+def is_false( parameter ):
+	return parameter == 0
+
+def is_less_than( parameter_1, parameter_2 ):
+	return parameter_1 < parameter_2
+
+def is_equal_to( parameter_1, parameter_2 ):
+	return parameter_1 == parameter_2
+
 
 def get_parameter_modes( parameter_modes_string ):
-    mode_1 = parameter_modes_string[-1:]
-    mode_2 = parameter_modes_string[-2:-1]
-    mode_3 = parameter_modes_string[-3:-2]
+	'''
+	Method used to abstract obtaining parameter modes from a parameter modes string.
+	Returns a length three tuple containing each of the parameter modes for the current instruction.
+	'''
+	mode_1 = parameter_modes_string[-1:]
+	mode_2 = parameter_modes_string[-2:-1]
+	mode_3 = parameter_modes_string[-3:-2]
 
-    return (
-            int(mode_1) if mode_1 else PARAMETER_MODE_POSITION,
-            int(mode_2) if mode_2 else PARAMETER_MODE_POSITION,
-            int(mode_3) if mode_3 else PARAMETER_MODE_POSITION
-            )
+	return (
+			int(mode_1) if mode_1 else PARAMETER_MODE_POSITION,
+			int(mode_2) if mode_2 else PARAMETER_MODE_POSITION,
+			int(mode_3) if mode_3 else PARAMETER_MODE_POSITION
+			)
 
 def perform_mathematic_instruction( eval_fn, array, pointer, modes):
-    '''
-    Currently handles all the operations required
-    for add and multiply procedures to work
-    '''
-    mode_1, mode_2, mode_3 = modes
-    parameter_1 = int(array[pointer + 1])
-    parameter_2 = int(array[pointer + 2])
-    val_1, val_2 = (None, None)
+	'''
+	Currently handles all the operations required
+	for add and multiply procedures to work
+	'''
+	mode_1, mode_2, mode_3 = modes
+	parameter_1 = int(array[pointer + 1])
+	parameter_2 = int(array[pointer + 2])
+	val_1, val_2 = (None, None)
 
-    # Parameter 3
-    group_store_location = int(array[pointer + 3])
+	# Parameter 3
+	group_store_location = int(array[pointer + 3])
 
-    if mode_1 == PARAMETER_MODE_IMMEDIATE:
-        val_1 = parameter_1
-    elif 0 <= parameter_1 < len(array):
-        val_1 = int(array[parameter_1])
+	val_1 = parameter_1 if mode_1 else int(array[parameter_1])
+	val_2 = parameter_2 if mode_2 else int(array[parameter_2])
 
-    if mode_2 == PARAMETER_MODE_IMMEDIATE:
-        val_2 = parameter_2
-    elif 0 <= parameter_2 < len(array):
-        val_2 = int(array[parameter_2])
+	if val_1 == None or val_2 == None:
+		raise Exception("perform_mathematic_instruction(): One of your values is not defined. Value_1: {val_1} | Value_2: {val_2}".format(val_1=val_1,val_2=val_2))
 
-    if val_1 == None or val_2 == None:
-        raise Exception("perform_mathematic_instruction(): One of your values is not defined. Value_1: {val_1} | Value_2: {val_2}".format(val_1=val_1,val_2=val_2))
+	evaluated = eval_fn(val_1, val_2)
 
-    evaluated = eval_fn(val_1, val_2)
+	if mode_3 == 1:
+		raise Exception("perform_mathematic_instruction(): Mode three is in immediate. Not really sure what to do with that.")
 
-    if mode_3 == 1:
-        raise Exception("perform_mathematic_instruction(): Mode three is in immediate. Not really sure what to do with that.")
+	# Assign the evaluated value to the group_store_location
+	if 0 <= group_store_location <= (len(array) - 1):
+		array[group_store_location] = str(evaluated)
 
-    # Assign the evaluated value to the group_store_location
-    if 0 <= group_store_location <= (len(array) - 1):
-        array[group_store_location] = str(evaluated)
-
-    return True
+	return True
 
 def perform_io_instruction( eval_fn, array, pointer, modes ):
-    '''
-    input/output based instructions. This means we will either take in input
-    or give out output, or both.
-    '''
-    mode_1, mode_2, mode_3 = modes
+	'''
+	input/output based instructions. This means we will either take in input
+	or give out output, or both.
+	'''
 
-    param = int(array[pointer + 1])
 
-    if int(mode_1) == PARAMETER_MODE_IMMEDIATE:
-        value = param
-    elif 0 <= param  <= (len(array) - 1):
-        value = int(array[param])
-    '''
-    Return the evaluated function and the value as I need the value to be able
-    to store an input value
-    '''
-    return eval_fn(array, value)
+def perform_input_instruction( eval_fn, array, pointer ):
+	param = int(array[pointer + 1])
+	return eval_fn(array, param)
+
+def perform_print_instruction( eval_fn, array, pointer, modes ):
+	mode_1 = modes[0]
+
+	param = int(array[pointer + 1])
+	value = param if mode_1 else int(array[param])
+	'''
+	Return the evaluated function
+	'''
+	return eval_fn(array, value)
+
+def perform_jump_instruction(eval_fn, array, pointer, modes):
+	'''
+	For either of the jump instructions. If we get a truthy value from our
+	eval_fn, then we can use that as the `if-false` `if-true` portion of the
+	the instruction
+	'''
+	mode_1, mode_2 = modes[:2]
+
+	param_1 = int(array[pointer + 1])
+	param_2 = int(array[pointer + 2])
+
+	value_1 = param_1 if mode_1 else int(array[param_1])
+	value_2 = param_2 if mode_2 else int(array[param_2])
+
+	# If our jump-if function does not denote that we should
+	# jump, then tell our main process function not to jump
+	# by returning none
+	if not eval_fn( value_1 ):
+		value_2 = None
+
+	return value_2
+
+
+def perform_comparative_instruction(eval_fn, array, pointer, modes):
+	mode_1, mode_2 = modes[:2]
+
+	param_1 = int(array[pointer + 1])
+	param_2 = int(array[pointer + 2])
+	param_3 = int(array[pointer + 3])
+
+	value_1 = param_1 if mode_1 else int(array[param_1])
+	value_2 = param_2 if mode_2 else int(array[param_2])
+	value_3 = param_3 # Guaranteed to be an address to store the value at
+
+	array[value_3] = '0'
+
+	if eval_fn(value_1, value_2):
+		array[value_3] = '1'
+
+	return True
 
 def perform_instruction( opcode, eval_fn, array, pointer, modes ):
-    if opcode == OPCODE_ADDITION or opcode == OPCODE_MULTIPLICATION:
-        return perform_mathematic_instruction(eval_fn, array, pointer, modes)
-    elif opcode == OPCODE_INPUT or opcode == OPCODE_PRINT:
-        return perform_io_instruction(eval_fn, array, pointer, modes)
-    else:
-        raise Exception("perform_instruction(): Unknown Instruction Opcode")
+	'''
+	Procedure that basically acts as a controller for all instructions that are available within the system.
+	Based on the opcode, we will direct our other input to other procedures that perform the specific operation we want
+	'''
+	if opcode == OPCODE_ADDITION or opcode == OPCODE_MULTIPLICATION:
+		return perform_mathematic_instruction(eval_fn, array, pointer, modes)
+	elif opcode == OPCODE_INPUT:
+		return perform_input_instruction(eval_fn, array, pointer)
+	elif opcode == OPCODE_PRINT:
+		return perform_print_instruction(eval_fn, array, pointer, modes)
+	elif opcode == OPCODE_JUMP_IF_FALSE or opcode == OPCODE_JUMP_IF_TRUE:
+		return perform_jump_instruction(eval_fn, array, pointer, modes)
+	elif opcode == OPCODE_LESS_THAN or opcode == OPCODE_EQUALS:
+		return perform_comparative_instruction(eval_fn, array, pointer, modes)
+	else:
+		raise Exception(f"perform_instruction(): Unknown Instruction Opcode Given: {opcode}")
 
 
-def process_intcode( intcode ):
-    '''
-    Take in an intcode string and return the processed output
-    as another intcode string
-    '''
+def process_intcode( intcode, debug=0 ):
+	'''
+	Take in an intcode string and return the processed output
+	as another intcode string
+	'''
+	count = 0
+	# Defining our opcode group specific variables
+	instruction_pointer = 0 # Position at start
+	intcode_array = [val for val in intcode.split(",")]
 
-    # Defining our opcode group specific variables
-    instruction_pointer = 0 # Position of our current opcode
-    intcode_array = [val for val in intcode.split(",")]
+	while True:
 
-    while True:
-        instruction_options = str(intcode_array[instruction_pointer])
-        # From 0 to 3 parameter modes given.
-        parameter_modes = instruction_options[:-2]
-        # Casting opcode to an int will remove the leading zero if necessary.
-        opcode = int(instruction_options[-2:])
-        # Evaluate our instruction opcodes
-        if opcode == OPCODE_ADDITION:
-            opcode_eval_function = add
-            instruction_values = 4
-        elif opcode == OPCODE_MULTIPLICATION:
-            opcode_eval_function = mul
-            instruction_values = 4
-        elif opcode == OPCODE_INPUT:
-            opcode_eval_function = get_input
-            instruction_values = 2
-        elif opcode == OPCODE_PRINT:
-            opcode_eval_function = do_output
-            instruction_values = 2
+		instruction_options = str(intcode_array[instruction_pointer])
+		# From 0 to 3 parameter modes given.
+		parameter_modes = instruction_options[:-2]
+		# Casting opcode to an int will remove the leading zero if necessary.
+		opcode = int(instruction_options[-2:])
+		if debug:
+			print('''
+
+============================================================
+Opcode: {opcode}
+Intcode Array: {intcode_array}
+============================================================
+
+'''.format(opcode=opcode,intcode_array=intcode_array))
+
+		# Evaluate our instruction opcodes
+		if opcode == OPCODE_ADDITION:
+			opcode_eval_function = add
+			instruction_values = 4
+		elif opcode == OPCODE_MULTIPLICATION:
+			opcode_eval_function = mul
+			instruction_values = 4
+		elif opcode == OPCODE_INPUT:
+			opcode_eval_function = get_input
+			instruction_values = 2
+		elif opcode == OPCODE_PRINT:
+			opcode_eval_function = do_output
+			instruction_values = 2
 		elif opcode == OPCODE_JUMP_IF_TRUE:
 			opcode_eval_function = is_true
-			instruction_values = 3 # not like it matters
+			instruction_values = 3
 		elif opcode == OPCODE_JUMP_IF_FALSE:
 			opcode_eval_function = is_false
-			instruction_values = 3 # not like it matters
+			instruction_values = 3
 		elif opcode == OPCODE_LESS_THAN:
 			opcode_eval_function = is_less_than
 			instruction_values = 4
 		elif opcode == OPCODE_EQUALS:
-			opcode_eval_funtion = is_equal_to
+			opcode_eval_function = is_equal_to
 			instruction_values = 4
-        elif opcode == 99: # Halts processing of our intcode string
-            break
+		elif opcode == 99: # Halts processing of our intcode string
+			break
 
-        try:
-            instruction_value = perform_instruction( opcode, opcode_eval_function, intcode_array, instruction_pointer, get_parameter_modes(parameter_modes) )
-        except Exception as e:
-            print("Error Occurred")
-            print(e)
+		try:
+			instruction_output = perform_instruction( opcode, opcode_eval_function, intcode_array, instruction_pointer, get_parameter_modes(parameter_modes) )
+		except Exception:
+			print("Error Occurred")
+			print(traceback.format_exc())
+			exit()
 
-        # Move our pointer up as many positions as instruction values
-        instruction_pointer += instruction_values
+		# Generally, at the end of our instruction we will direct our instruction pointer to point at an opcode
+		# "instruction values" ahead of the current instruction.
+		instruction_pointer_interrim_value = instruction_pointer + instruction_values
 
-    return ",".join([str(val) for val in intcode_array])
+		# Case for when we are hijacking general instruction pointer direction with the output of our instruction.
+		if (opcode == OPCODE_JUMP_IF_FALSE or opcode == OPCODE_JUMP_IF_TRUE) and not instruction_output == None:
+			instruction_pointer_interrim_value = instruction_output
+
+		# Move our pointer up as many positions as instruction values
+		instruction_pointer = instruction_pointer_interrim_value
+		count += 1
+
+	return ",".join([str(val) for val in intcode_array])
+
+debug = False
 
 if __name__ == '__main__':
-    # Run some tests before we get to the meat and potatoes.
-	assertEquals("2,0,0,0,99", process_intcode("1,0,0,0,99"))
-	assertEquals("2,3,0,6,99", process_intcode("2,3,0,3,99"))
-	assertEquals("2,4,4,5,99,9801", process_intcode("2,4,4,5,99,0"))
-	assertEquals("30,1,1,4,2,5,6,0,99", process_intcode("1,1,1,4,99,5,6,0,99"))
+	# Run some tests before we get to the meat and potatoes.
 
+	if debug:
+		''' Testing if Generics Work '''
+		assertEquals(4, add(2, 2))
+		assertEquals(8, mul(4,2))
+		assertEquals(True, is_true(20))
+		assertEquals(False, is_true(0))
+		assertEquals(True, is_false(0))
+		assertEquals(False, is_false(1))
+		assertEquals(True, is_less_than(1, 2))
+		assertEquals(False, is_less_than(100, 5))
+		assertEquals(True, is_equal_to(2, 2))
+		assertEquals(False, is_equal_to(50, 69))
+		assertEquals(
+			"3,12,6,12,15,1,13,14,13,4,13,99,0,0,1,9",
+			",".join(get_input(
+				[val for val in "3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9".split(",")],
+				12,
+				0
+			))
+		)
+
+		''' Blackbox testing '''
+		assertEquals("2,0,0,0,99", process_intcode("1,0,0,0,99"))
+		assertEquals("2,3,0,6,99", process_intcode("2,3,0,3,99"))
+		assertEquals("2,4,4,5,99,9801", process_intcode("2,4,4,5,99,0"))
+		assertEquals("30,1,1,4,2,5,6,0,99", process_intcode("1,1,1,4,99,5,6,0,99"))
+
+	# Ex1 & 2 will take an input and output 0 if input was 0. One if input was non-zero
+	# Ex3 will ask for single number and output 999 if below 8, 1000 if equal 8, 1001 if greater than 8
 	input_file = open('input.txt','r')
 
 	with input_file:
 		input_intcode = input_file.read()
-		process_intcode(input_intcode)
+
+		# Remove newlines from input
+		input_intcode = input_intcode.replace("\n", "")
+
+		process_intcode(input_intcode, debug)
