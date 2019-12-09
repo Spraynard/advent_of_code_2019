@@ -185,7 +185,6 @@ class IntcodeComputer:
 		user_input = input("> ") if self.program_input is False else str(self.input_queue.popleft())
 
 		if 0 <= value < len(array):
-			print(f"We are storing here {value}")
 			array[value] = user_input
 
 		return array
