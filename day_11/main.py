@@ -75,16 +75,6 @@ class Robot:
         self.rotate_in_direction(direction)
         self.move_forward()
 
-def replaceMultiple(mainString, toBeReplaces, newString):
-    # Iterate over the strings to be replaced
-    for elem in toBeReplaces :
-        # Check if string is in the main string
-        if elem in mainString :
-            # Replace the string
-            mainString = mainString.replace(elem, newString)
-
-    return  mainString
-
 def print_location_colors( location_colors ):
     # find the max x and y
     os.system('clear')
@@ -119,7 +109,7 @@ if __name__ == "__main__":
     at_least_once_paint_count = 1
     while True:
         # print(location_colors)
-        # p`rint_location_colors(location_colors)
+        print_location_colors(location_colors)
         # Inputting current location into robot computer
         robot.relay_current_location_information(computer, location_colors)
 
@@ -137,6 +127,6 @@ if __name__ == "__main__":
 
         if ( robot_panel_color_output is None or robot_movement_direction_output is None ):
             break
-        # sleep(0.15)
+        sleep(0.15)
     print(f"At least once paint count: {at_least_once_paint_count}")
     print_location_colors(location_colors)
