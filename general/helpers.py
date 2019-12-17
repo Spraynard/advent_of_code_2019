@@ -7,3 +7,8 @@ def replaceMultiple(mainString, toBeReplaces, newString):
             mainString = mainString.replace(elem, newString)
 
     return  mainString
+
+def trueIfNotNone( subject ):
+    if subject is None:
+        return False
+    return True

@@ -75,7 +75,7 @@ Opcodes (like 1, 2, or 99) mark the beginning of an instruction. The values used
 The address of the current instruction is called the instruction pointer; it starts at 0. After an instruction finishes, the instruction pointer increases by the number of values in the instruction; until you add more instructions to the computer, this is always 4 (1 opcode + 3 parameters) for the add and multiply instructions. (The halt instruction would increase the instruction pointer by 1, but it halts the program instead.)
 '''
 import traceback
-from assertions import assertEquals
+from .assertions import assertEquals
 from enum import IntEnum
 from collections import deque
 
