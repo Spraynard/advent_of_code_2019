@@ -104,6 +104,8 @@ class Game:
         self.tile_factory = tile_factory
         self.score = 0
         self.tiles = []
+        self.paddle = None
+        self.ball = None
         self.position_to_block = {}
 
     def tileCount(self):
@@ -113,6 +115,11 @@ class Game:
         self.score = score
 
     def loop(self):
+        if self.paddle and self.ball:
+            paddle_position_x = self.paddle.position[0]
+            ball_position_x = self.ball.position[0]
+            self.computer.set_input_queue([-1 if ball_position_x < paddle_position_x else 0 if ball_position_x == paddle_position_x else 1])
+
         action_array = [
                 self.computer.process_intcode(), # Get X Position
                 self.computer.process_intcode(), # Get Y Position
@@ -130,6 +137,10 @@ class Game:
         if x == -1 and y == 0:
             self.setScore(tile_id)
             return True
+        elif tile_id == TileID.HORIZONTAL_PADDLE:
+            self.paddle = HorizontalPaddle(x, y)
+        elif tile_id == TileID.BALL:
+            self.ball = Ball(x, y)
 
         tile = self.tile_factory.createTile( tile_id, x, y )
         self.position_to_block[str([x, y])] = tile
@@ -172,7 +183,7 @@ if __name__ == "__main__":
         instructions = "".join(instructions_array)
 
     game = Game(
-        IntcodeComputer(instructions, False, True, True, False, True),
+        IntcodeComputer(instructions, True, True, True, False, True),
         TileFactory
     )
 
