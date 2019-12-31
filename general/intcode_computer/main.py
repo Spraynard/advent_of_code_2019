@@ -75,7 +75,6 @@ Opcodes (like 1, 2, or 99) mark the beginning of an instruction. The values used
 The address of the current instruction is called the instruction pointer; it starts at 0. After an instruction finishes, the instruction pointer increases by the number of values in the instruction; until you add more instructions to the computer, this is always 4 (1 opcode + 3 parameters) for the add and multiply instructions. (The halt instruction would increase the instruction pointer by 1, but it halts the program instead.)
 '''
 import traceback
-from .assertions import assertEquals
 from enum import IntEnum
 from collections import deque
 
@@ -234,6 +233,7 @@ class IntcodeComputer:
 		# Assign the evaluated value to the parameter_3
 		if mode_3 == Mode.RELATIVE:
 			val_3 = val_3 + self.relative_base
+			# print(f"Val 3: {val_3}")
 
 		if 0 <= val_3 < len(array):
 			array[val_3] = str(evaluated)
@@ -440,42 +440,30 @@ if __name__ == '__main__':
 	# Run some tests before we get to the meat and potatoes.
 
 	''' Testing if Generics Work '''
-	assertEquals(4, add(2, 2))
-	assertEquals(8, mul(4,2))
-	assertEquals(True, is_true(20))
-	assertEquals(False, is_true(0))
-	assertEquals(True, is_false(0))
-	assertEquals(False, is_false(1))
-	assertEquals(True, is_less_than(1, 2))
-	assertEquals(False, is_less_than(100, 5))
-	assertEquals(True, is_equal_to(2, 2))
-	assertEquals(False, is_equal_to(50, 69))
+	assert add(2, 2) == 4
+	assert mul(4,2) == 8
+	assert is_true(20) == True
+	assert is_true(0) == False
+	assert is_false(0) == True
+	assert is_false(1) == False
+	assert is_less_than(1, 2) == True
+	assert is_less_than(100, 5) == False
+	assert is_equal_to(2, 2) == True
+	assert is_equal_to(50, 69) == False
 
 	test1 = IntcodeComputer('', True)
 	test1.set_input_queue([0])
-	assertEquals(
-		"3,12,6,12,15,1,13,14,13,4,13,99,0,0,1,9",
-		",".join(test1.get_input(
+	assert ",".join(test1.get_input(
 			[val for val in "3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9".split(",")],
 			12
-		))
-	)
+		)) == "3,12,6,12,15,1,13,14,13,4,13,99,0,0,1,9"
 
 	''' Blackbox testing '''
 	test2 = IntcodeComputer("1,0,0,0,99", False, False, True, True)
-	assertEquals("2,0,0,0,99", test2.process_intcode())
+	assert test2.process_intcode() == "2,0,0,0,99"
 	test3 = IntcodeComputer("2,3,0,3,99", False, False, True, True)
-	assertEquals("2,3,0,6,99", test3.process_intcode())
+	assert test3.process_intcode() == "2,3,0,6,99"
 	test4 = IntcodeComputer("2,4,4,5,99,0", False, False, True, True)
-	assertEquals("2,4,4,5,99,9801", test4.process_intcode())
+	assert test4.process_intcode() == "2,4,4,5,99,9801"
 	test5 = IntcodeComputer("1,1,1,4,99,5,6,0,99", False, False, True, True)
-	assertEquals("30,1,1,4,2,5,6,0,99", test5.process_intcode())
-	with open('test_1.txt', 'r') as f:
-		instructions = f.read()
-		test5 = IntcodeComputer(instructions, False, False, False, True, True)
-		assertEquals(instructions, test5.process_intcode()[:len(instructions)])
-
-	with open('input.txt', 'r') as f:
-		instructions = f.read()
-		computer = IntcodeComputer(instructions, False, False, False, False, True)
-		computer.process_intcode()
+	assert test5.process_intcode() == "30,1,1,4,2,5,6,0,99"
